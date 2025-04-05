@@ -10,7 +10,9 @@ import org.stealingdapenta.api.ChatGPTClient
 import org.stealingdapenta.git.GitIntegration
 import org.stealingdapenta.git.ProjectFileWriter
 import org.stealingdapenta.github.GitHubService
+import org.stealingdapenta.github.GitHubSettingsService
 import org.stealingdapenta.ui.FeaturePromptDialog
+import org.stealingdapenta.ui.GitHubTokenDialog
 
 class GenerateFeatureAction : AnAction() {
 
@@ -21,6 +23,33 @@ class GenerateFeatureAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+
+        val existingToken = GitHubSettingsService.getToken()
+        val existingRepo = GitHubSettingsService.getRepo()
+
+        if (existingToken.isNullOrBlank() || existingRepo.isNullOrBlank()) {
+            val tokenDialog = GitHubTokenDialog()
+            if (!tokenDialog.showAndGet()) {
+                showError(project, "❌ GitHub token is required.")
+                return
+            }
+
+            val token = tokenDialog.getToken()
+            if (token.isBlank()) {
+                showError(project, "❌ GitHub token cannot be empty.")
+                return
+            }
+
+            val repo = Messages.showInputDialog(
+                project,
+                "Enter your GitHub repo (e.g. username/repo):",
+                "GitHub Repository",
+                Messages.getQuestionIcon()
+            ) ?: return
+
+            GitHubSettingsService.setToken(token)
+            GitHubSettingsService.setRepo(repo)
+        }
 
         val dialog = FeaturePromptDialog()
         if (!dialog.showAndGet()) return
@@ -69,9 +98,8 @@ class GenerateFeatureAction : AnAction() {
                 val fileJson = JSONObject(response)
 
                 for (key in fileJson.keys()) {
-                    val filePath = key
                     val content = fileJson.getString(key)
-                    ProjectFileWriter.writeFile(project, filePath, content)
+                    ProjectFileWriter.writeFile(project, key, content)
                 }
             } catch (ex: Exception) {
                 showError(project, "❌ Failed to parse or write model output.\n\nRaw response:\n$response")

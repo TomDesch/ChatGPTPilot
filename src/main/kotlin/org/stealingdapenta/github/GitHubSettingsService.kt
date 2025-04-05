@@ -34,11 +34,11 @@ class GitHubSettingsService : PersistentStateComponent<GitHubSettingsService.Sta
 
     companion object {
         private fun getInstance(): GitHubSettingsService =
-            com.intellij.openapi.application.ApplicationManager
-                .getApplication()
-                .getService(GitHubSettingsService::class.java)
+            com.intellij.openapi.application.ApplicationManager.getApplication().getService(GitHubSettingsService::class.java)
 
         fun getToken(): String? = getInstance().getToken()
+        fun setToken(token: String) = getInstance().setToken(token)
         fun getRepo(): String? = getInstance().getRepo()
+        fun setRepo(repo: String) = getInstance().setRepo(repo)
     }
 }
