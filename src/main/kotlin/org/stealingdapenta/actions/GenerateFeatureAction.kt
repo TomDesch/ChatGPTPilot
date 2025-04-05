@@ -3,6 +3,7 @@ package org.stealingdapenta.actions
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import org.json.JSONObject
@@ -24,31 +25,19 @@ class GenerateFeatureAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
 
-        val existingToken = GitHubSettingsService.getToken()
-        val existingRepo = GitHubSettingsService.getRepo()
+        val token = GitHubSettingsService.getToken()
+        val repo = GitHubSettingsService.getRepo()
 
-        if (existingToken.isNullOrBlank() || existingRepo.isNullOrBlank()) {
-            val tokenDialog = GitHubTokenDialog()
-            if (!tokenDialog.showAndGet()) {
-                showError(project, "❌ GitHub token is required.")
-                return
+        if (token.isNullOrBlank() || repo.isNullOrBlank() || !GitHubService.isRepoValid(repo, token)) {
+            ApplicationManager.getApplication().invokeLater {
+                Messages.showErrorDialog(
+                    project,
+                    "Your GitHub token or repo is missing or invalid. Please configure it first.",
+                    "ChatGPTPilot"
+                )
+                GitHubTokenDialog().show()
             }
-
-            val token = tokenDialog.getToken()
-            if (token.isBlank()) {
-                showError(project, "❌ GitHub token cannot be empty.")
-                return
-            }
-
-            val repo = Messages.showInputDialog(
-                project,
-                "Enter your GitHub repo (e.g. username/repo):",
-                "GitHub Repository",
-                Messages.getQuestionIcon()
-            ) ?: return
-
-            GitHubSettingsService.setToken(token)
-            GitHubSettingsService.setRepo(repo)
+            return
         }
 
         val dialog = FeaturePromptDialog()
@@ -58,6 +47,7 @@ class GenerateFeatureAction : AnAction() {
             showError(project, "⚠️ Prompt cannot be empty.")
             return
         }
+
         val taskType = dialog.getTaskType()
         val branchName = generateBranchName(taskType)
 
@@ -96,7 +86,6 @@ class GenerateFeatureAction : AnAction() {
 
             try {
                 val fileJson = JSONObject(response)
-
                 for (key in fileJson.keys()) {
                     val content = fileJson.getString(key)
                     ProjectFileWriter.writeFile(project, key, content)
@@ -122,7 +111,8 @@ class GenerateFeatureAction : AnAction() {
                 onSuccess = {
                     showInfo(project, "✅ Pull request created successfully!")
                 },
-                onFailure = { error -> showError(project, error) })
+                onFailure = { error -> showError(project, error) }
+            )
         }, onFailure = { error ->
             showError(project, error)
         })
@@ -139,6 +129,8 @@ class GenerateFeatureAction : AnAction() {
     }
 
     private fun showError(project: Project, message: String) {
-        Messages.showErrorDialog(project, message, "ChatGPTPilot - Error")
+        ApplicationManager.getApplication().invokeLater {
+            Messages.showErrorDialog(project, message, "ChatGPTPilot - Error")
+        }
     }
 }

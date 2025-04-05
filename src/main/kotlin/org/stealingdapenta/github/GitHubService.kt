@@ -9,10 +9,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
 object GitHubService {
-    private const val BASE_API = "https://api.github.com/repos"
-
     private val client = OkHttpClient()
     private val objectMapper = ObjectMapper()
+
     private fun getToken(): String {
         return GitHubSettingsService.getToken() ?: error("GitHub token is not configured.")
     }
@@ -21,12 +20,24 @@ object GitHubService {
         return GitHubSettingsService.getRepo() ?: error("GitHub repo is not configured.")
     }
 
+    fun isRepoValid(repo: String, token: String): Boolean {
+        val request = Request.Builder().url("https://api.github.com/repos/$repo").addHeader("Authorization", "Bearer $token")
+            .addHeader("Accept", "application/vnd.github+json").build()
+
+        return try {
+            client.newCall(request).execute().use { response ->
+                response.code == 200
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun createBranch(baseBranch: String = "main", newBranch: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         val repo = getRepo()
         val token = getToken()
 
-        // Step 1: Get the latest commit SHA of base branch
-        val baseUrl = "$BASE_API/$repo/git/ref/heads/$baseBranch"
+        val baseUrl = "https://api.github.com/repos/$repo/git/ref/heads/$baseBranch"
         val request = Request.Builder().url(baseUrl).header("Authorization", "Bearer $token").header("Accept", "application/vnd.github+json").build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -36,17 +47,13 @@ object GitHubService {
 
             override fun onResponse(call: Call, response: Response) {
                 if (!response.isSuccessful) {
-                    val errorMsg = response.body?.string()?.let {
-                        objectMapper.readTree(it)?.get("message")?.asText()
-                    } ?: response.message
-                    onFailure("GitHub error: $errorMsg")
+                    onFailure("GitHub error: ${response.message}")
                     return
                 }
 
                 val json = objectMapper.readTree(response.body?.string())
                 val sha = json["object"]["sha"].asText()
 
-                // Step 2: Create new branch ref
                 val createUrl = "https://api.github.com/repos/$repo/git/refs"
                 val bodyJson = objectMapper.createObjectNode().apply {
                     put("ref", "refs/heads/$newBranch")
@@ -79,7 +86,7 @@ object GitHubService {
         val repo = getRepo()
         val token = getToken()
 
-        val prUrl = "$BASE_API/$repo/pulls"
+        val prUrl = "https://api.github.com/repos/$repo/pulls"
         val prJson = objectMapper.createObjectNode().apply {
             put("title", title)
             put("body", body)
@@ -101,10 +108,7 @@ object GitHubService {
                 if (response.isSuccessful) {
                     onSuccess()
                 } else {
-                    val errorMsg = response.body?.string()?.let {
-                        objectMapper.readTree(it)?.get("message")?.asText()
-                    } ?: response.message
-                    onFailure("GitHub error: $errorMsg")
+                    onFailure("GitHub error: ${response.message}")
                 }
             }
         })
