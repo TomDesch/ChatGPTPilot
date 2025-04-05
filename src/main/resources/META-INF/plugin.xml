@@ -44,7 +44,7 @@
       description="Create a GitHub branch, commit, and pull request from your ChatGPT prompt."
       id="ChatGPT.GenerateFeaturePR"
       text="Generate PR from Prompt">
-      <add-to-group anchor="last" group-id="MainMenu"/>
+      <add-to-group anchor="last" group-id="ToolsMenu"/>
     </action>
 
     <!-- Lightweight generation (does not commit) -->
@@ -52,7 +52,7 @@
       description="Generate raw code for a new feature based on a ChatGPT prompt."
       id="ChatGPT.FeatureGenerationAction"
       text="Generate Feature Code">
-      <add-to-group anchor="last" group-id="MainMenu"/>
+      <add-to-group anchor="last" group-id="ToolsMenu"/>
     </action>
 
     <!-- More advanced generation and PR creation -->
@@ -60,7 +60,7 @@
       description="Use ChatGPT to generate and commit a full feature in a new GitHub PR."
       id="ChatGPT.GenerateFeatureAction"
       text="Generate Full Feature via GPT">
-      <add-to-group anchor="last" group-id="MainMenu"/>
+      <add-to-group anchor="last" group-id="ToolsMenu"/>
     </action>
   </actions>
 
