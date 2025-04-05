@@ -40,6 +40,8 @@ class GenerateFeatureAction : AnAction() {
             return
         }
 
+        if (!GitHubSettingsService.ensureRepoConfigured(project)) return
+
         val dialog = FeaturePromptDialog()
         if (!dialog.showAndGet()) return
 

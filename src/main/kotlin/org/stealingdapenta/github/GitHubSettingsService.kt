@@ -4,6 +4,8 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.project.Project
+import org.stealingdapenta.ui.GitHubRepoDialog
 
 @Service
 @State(name = "GitHubSettings", storages = [Storage("chatgpt-pilot.xml")])
@@ -32,6 +34,16 @@ class GitHubSettingsService : PersistentStateComponent<GitHubSettingsService.Sta
         state.repo = repo
     }
 
+    fun ensureRepoConfigured(project: Project): Boolean {
+        if (getRepo().isNullOrBlank()) {
+            val dialog = GitHubRepoDialog()
+            if (!dialog.showAndGet()) return false
+            setRepo(dialog.getRepo())
+        }
+        return true
+    }
+
+
     companion object {
         private fun getInstance(): GitHubSettingsService =
             com.intellij.openapi.application.ApplicationManager.getApplication().getService(GitHubSettingsService::class.java)
@@ -40,5 +52,8 @@ class GitHubSettingsService : PersistentStateComponent<GitHubSettingsService.Sta
         fun setToken(token: String) = getInstance().setToken(token)
         fun getRepo(): String? = getInstance().getRepo()
         fun setRepo(repo: String) = getInstance().setRepo(repo)
+        fun ensureRepoConfigured(project: Project): Boolean {
+            return getInstance().ensureRepoConfigured(project)
+        }
     }
 }

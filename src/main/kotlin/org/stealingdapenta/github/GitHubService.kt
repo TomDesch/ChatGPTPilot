@@ -1,8 +1,6 @@
 package org.stealingdapenta.github
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.ui.Messages
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -47,7 +45,8 @@ object GitHubService {
 
             override fun onResponse(call: Call, response: Response) {
                 if (!response.isSuccessful) {
-                    onFailure("GitHub error: ${response.message}")
+                    val errorBody = response.body?.string()
+                    onFailure("GitHub error: ${response.code} ${response.message}\n$errorBody")
                     return
                 }
 
@@ -108,15 +107,10 @@ object GitHubService {
                 if (response.isSuccessful) {
                     onSuccess()
                 } else {
-                    onFailure("GitHub error: ${response.message}")
+                    val errorBody = response.body?.string()
+                    onFailure("GitHub error: ${response.code} ${response.message}\n$errorBody")
                 }
             }
         })
-    }
-
-    fun showErrorDialog(message: String) {
-        ApplicationManager.getApplication().invokeLater {
-            Messages.showErrorDialog(message, "GitHub API Error")
-        }
     }
 }
