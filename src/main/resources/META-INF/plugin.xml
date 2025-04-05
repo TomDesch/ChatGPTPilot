@@ -39,22 +39,6 @@
       <add-to-group group-id="EditorPopupMenu" anchor="last"/>
     </action>
 
-    <!-- GitHub feature PR via dialog -->
-    <action class="org.stealingdapenta.actions.GenerateFeaturePullRequestAction"
-      description="Create a GitHub branch, commit, and pull request from your ChatGPT prompt."
-      id="ChatGPT.GenerateFeaturePR"
-      text="Generate PR from Prompt">
-      <add-to-group anchor="last" group-id="ToolsMenu"/>
-    </action>
-
-    <!-- Lightweight generation (does not commit) -->
-    <action class="org.stealingdapenta.actions.FeatureGenerationAction"
-      description="Generate raw code for a new feature based on a ChatGPT prompt."
-      id="ChatGPT.FeatureGenerationAction"
-      text="Generate Feature Code">
-      <add-to-group anchor="last" group-id="ToolsMenu"/>
-    </action>
-
     <!-- More advanced generation and PR creation -->
     <action class="org.stealingdapenta.actions.GenerateFeatureAction"
       description="Use ChatGPT to generate and commit a full feature in a new GitHub PR."
@@ -63,6 +47,5 @@
       <add-to-group anchor="last" group-id="ToolsMenu"/>
     </action>
   </actions>
-
 
 </idea-plugin>

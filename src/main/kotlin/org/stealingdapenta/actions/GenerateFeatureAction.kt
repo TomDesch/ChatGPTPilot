@@ -12,7 +12,12 @@ import org.stealingdapenta.git.ProjectFileWriter
 import org.stealingdapenta.github.GitHubService
 import org.stealingdapenta.ui.FeaturePromptDialog
 
-class GenerateFeatureAction : AnAction("Generate Feature with ChatGPT") {
+class GenerateFeatureAction : AnAction() {
+
+    init {
+        templatePresentation.text = "GPT: Create Feature PR"
+        templatePresentation.description = "Use ChatGPT to generate and commit a new feature or fix, then open a GitHub pull request."
+    }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
@@ -20,43 +25,48 @@ class GenerateFeatureAction : AnAction("Generate Feature with ChatGPT") {
         val dialog = FeaturePromptDialog()
         if (!dialog.showAndGet()) return
 
-        val prompt = dialog.getPrompt()
+        val prompt = dialog.getPrompt().ifBlank {
+            showError(project, "⚠️ Prompt cannot be empty.")
+            return
+        }
         val taskType = dialog.getTaskType()
-        val branchName = "chatgpt/${taskType.lowercase().replace(" ", "_")}_${System.currentTimeMillis()}"
+        val branchName = generateBranchName(taskType)
 
         GitHubService.createBranch(newBranch = branchName, onSuccess = {
             val checkoutResult = GitIntegration.runGitCommand(project, "checkout", branchName)
             if (!checkoutResult.contains("Switched to")) {
-                showError(project, "❌ Failed to checkout new branch:\n$checkoutResult")
+                showError(project, "❌ Could not switch to new branch:\n$checkoutResult")
                 return@createBranch
             }
 
             val systemPrompt = """
-                You are a powerful GitHub development agent.
-                The user will provide a feature request and you must generate the required source files to implement it.
-                Respond with a pure JSON object. Each key is a relative file path (e.g. src/main/java/.../MyController.kt),
-                and each value is the full content of the file.
-                DO NOT include markdown formatting, backticks, or explanations. Just the JSON object.
+                You are a powerful GitHub automation agent.
+                The user will describe a change they want made.
+                You will generate a valid JSON object where each key is a relative file path (e.g. src/main/.../MyClass.kt)
+                and the value is the full contents of that file.
+                Output must be raw JSON. Do not include backticks, markdown, or commentary.
             """.trimIndent()
 
             val userPrompt = """
-                $taskType requested by user:
-                "$prompt"
-                Generate any necessary files and changes. Return JSON only.
+                Task Type: $taskType
+                
+                User Request:
+                $prompt
+                
+                Please return all necessary files as JSON.
             """.trimIndent()
 
-            val response = ChatGPTClient.sendPrompt(
-                """
-                You are a JSON code generation engine.
-                $systemPrompt
-                
-                User says:
-                $userPrompt
+            val fullPrompt = """
+                [
+                  { "role": "system", "content": "$systemPrompt" },
+                  { "role": "user", "content": "$userPrompt" }
+                ]
             """.trimIndent()
-            )
+
+            val response = ChatGPTClient.sendPrompt(fullPrompt)
 
             try {
-                val fileJson = JSONObject(response) // Force string-based constructor
+                val fileJson = JSONObject(response)
 
                 for (key in fileJson.keys()) {
                     val filePath = key
@@ -64,40 +74,43 @@ class GenerateFeatureAction : AnAction("Generate Feature with ChatGPT") {
                     ProjectFileWriter.writeFile(project, filePath, content)
                 }
             } catch (ex: Exception) {
-                showError(project, "❌ Could not parse or write files.\n\nResponse:\n$response")
+                showError(project, "❌ Failed to parse or write model output.\n\nRaw response:\n$response")
                 return@createBranch
             }
 
             GitIntegration.stageAll(project)
             GitIntegration.commit(project, "$taskType: $prompt")
-            val push = GitIntegration.push(project, branchName)
+            val pushOutput = GitIntegration.push(project, branchName)
 
-            if (!push.contains("Done") && !push.contains("success")) {
-                showError(project, "🚨 Push failed:\n$push")
+            if (!pushOutput.contains("Done") && !pushOutput.contains("success")) {
+                showError(project, "🚨 Push failed:\n$pushOutput")
                 return@createBranch
             }
 
             GitHubService.createPullRequest(
                 title = "$taskType: $prompt",
-                body = "Automatically generated by ChatGPTPilot based on your request.",
+                body = "This pull request was automatically generated by ChatGPTPilot.\n\nPrompt: $prompt",
                 head = branchName,
                 onSuccess = {
                     showInfo(project, "✅ Pull request created successfully!")
                 },
-                onFailure = { err -> showError(project, err) }
-            )
-        }, onFailure = { err ->
-            showError(project, err)
+                onFailure = { error -> showError(project, error) })
+        }, onFailure = { error ->
+            showError(project, error)
         })
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
-    private fun showInfo(project: Project, msg: String) {
-        Messages.showInfoMessage(project, msg, "ChatGPTPilot")
+    private fun generateBranchName(taskType: String): String {
+        return "chatgpt/${taskType.lowercase().replace(" ", "_")}_${System.currentTimeMillis()}"
     }
 
-    private fun showError(project: Project, msg: String) {
-        Messages.showErrorDialog(project, msg, "ChatGPTPilot - Error")
+    private fun showInfo(project: Project, message: String) {
+        Messages.showInfoMessage(project, message, "ChatGPTPilot")
+    }
+
+    private fun showError(project: Project, message: String) {
+        Messages.showErrorDialog(project, message, "ChatGPTPilot - Error")
     }
 }
