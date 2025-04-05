@@ -68,8 +68,8 @@ class GenerateFeatureAction : AnAction("Generate Feature with ChatGPT") {
                 return@createBranch
             }
 
-            val stage = GitIntegration.stageAll(project)
-            val commit = GitIntegration.commit(project, "$taskType: $prompt")
+            GitIntegration.stageAll(project)
+            GitIntegration.commit(project, "$taskType: $prompt")
             val push = GitIntegration.push(project, branchName)
 
             if (!push.contains("Done") && !push.contains("success")) {
