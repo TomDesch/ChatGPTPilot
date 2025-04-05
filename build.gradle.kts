@@ -21,8 +21,12 @@ intellij {
 }
 
 dependencies {
-    implementation("com.squareup.okhttp3:okhttp:4.11.0") // for OpenAI calls
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+// https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.3")
+    // https://mvnrepository.com/artifact/org.json/json
+    implementation("org.json:json:20250107")
 }
 
 tasks {
