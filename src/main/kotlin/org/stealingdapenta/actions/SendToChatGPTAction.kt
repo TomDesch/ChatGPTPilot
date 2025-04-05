@@ -29,29 +29,53 @@ class SendToChatGPTAction : AnAction() {
             return
         }
 
-        val dialog = ChatGptPromptDialog(ChatGPTClient.getModelUsed())
+        val modelUsed = ChatGPTClient.getModelUsed()
+        val dialog = ChatGptPromptDialog(modelUsed)
         if (!dialog.showAndGet()) return
 
-        val fullPrompt = dialog.getFinalPrompt() + "\n\n```kotlin\n$selectedText\n```"
+        fun runPrompt(prompt: String, originalText: String) {
+            val result = ChatGPTClient.sendPrompt(prompt)
 
-        val result = ChatGPTClient.sendPrompt(fullPrompt)
+            ApplicationManager.getApplication().invokeLater {
+                val choice = Messages.showDialog(
+                    project,
+                    result,
+                    "ChatGPT Response (Model: $modelUsed)",
+                    arrayOf("Copy to Clipboard", "Apply", "Reiterate", "Cancel"),
+                    0,
+                    Messages.getInformationIcon()
+                )
 
-        ApplicationManager.getApplication().invokeLater {
-            val userChoice = Messages.showDialog(
-                project, result, "ChatGPT Response", arrayOf("Copy to Clipboard", "Apply", "Cancel"), 0, Messages.getInformationIcon()
-            )
+                when (choice) {
+                    0 -> {
+                        CopyPasteManager.getInstance().setContents(StringSelection(result))
+                        Messages.showInfoMessage(project, "Copied to clipboard!", "ChatGPT")
+                    }
 
-            when (userChoice) {
-                0 -> CopyPasteManager.getInstance().setContents(StringSelection(result))
-                1 -> WriteCommandAction.runWriteCommandAction(project) {
-                    document.replaceString(
-                        selectionModel.selectionStart, selectionModel.selectionEnd, result
-                    )
+                    1 -> {
+                        WriteCommandAction.runWriteCommandAction(project) {
+                            document.replaceString(
+                                selectionModel.selectionStart, selectionModel.selectionEnd, result
+                            )
+                        }
+                    }
+
+                    2 -> {
+                        val refinedDialog = ChatGptPromptDialog(modelUsed)
+                        if (refinedDialog.showAndGet()) {
+                            val refinedPrompt = refinedDialog.getFinalPrompt() + "\n\n$originalText"
+                            runPrompt(refinedPrompt, originalText)
+                        }
+                    }
+                    // 3 = Cancel
                 }
-                // 2 = Cancel
             }
         }
+
+        val fullPrompt = dialog.getFinalPrompt() + "\n\n$selectedText"
+        runPrompt(fullPrompt, selectedText)
     }
+
 
     override fun getActionUpdateThread(): ActionUpdateThread {
         return ActionUpdateThread.EDT
