@@ -15,9 +15,8 @@ class ChatGptPromptDialog(private val currentModel: String) : DialogWrapper(true
     }
 
     private val refactorCheckbox = JBCheckBox("Refactor", true)
-    private val cleanUpCheckbox = JBCheckBox("Clean up", false)
-    private val optimizeCheckbox = JBCheckBox("Optimize", false)
-    private val copyToClipboardCheckbox = JBCheckBox("Copy response to clipboard", true)
+    private val optimizeCheckbox = JBCheckBox("Optimize", true)
+    private val reworkCheckbox = JBCheckBox("Rework (specify!)", true)
 
     private val panel = JPanel(BorderLayout())
 
@@ -27,9 +26,8 @@ class ChatGptPromptDialog(private val currentModel: String) : DialogWrapper(true
 
         val optionsPanel = JPanel(GridLayout(0, 1)).apply {
             add(refactorCheckbox)
-            add(cleanUpCheckbox)
             add(optimizeCheckbox)
-            add(copyToClipboardCheckbox)
+            add(reworkCheckbox)
         }
 
         val form = JPanel(BorderLayout(5, 10)).apply {
@@ -57,13 +55,18 @@ class ChatGptPromptDialog(private val currentModel: String) : DialogWrapper(true
         val base = promptField.text.trim()
         val additions = mutableListOf<String>()
         if (refactorCheckbox.isSelected) additions.add(
-            "Refactor the code with modern best practices. Keep behavior unchanged. Apply clean code, SOLID, DRY, KISS, and YAGNI."
+            "Refactor the following code using modern software engineering principles. Improve code structure, naming, readability, and maintainability without altering the original functionality. Apply best practices such as Clean Code, SOLID principles (Single Responsibility, Open/Closed, etc.), DRY (Don't Repeat Yourself), KISS (Keep It Simple, Stupid), and YAGNI (You Aren’t Gonna Need It). Avoid unnecessary comments unless they clarify non-obvious logic. The final result should be production-quality and idiomatic for the target language."
         )
-        if (cleanUpCheckbox.isSelected) additions.add("Clean up formatting and style.")
-        if (optimizeCheckbox.isSelected) additions.add("Optimize performance.")
+
+        if (optimizeCheckbox.isSelected) additions.add(
+            "Analyze and optimize the performance of the provided code. Focus on improving runtime efficiency, reducing unnecessary memory usage, minimizing CPU cycles, and eliminating redundant computations. Maintain identical functional behavior. Suggest or apply algorithmic improvements, caching opportunities, or simplifications where applicable. Only refactor where it yields measurable performance gain without introducing complexity."
+        )
+        if (reworkCheckbox.isSelected) additions.add(
+            "Rework the code based on the custom prompt provided by the user. Follow the intent described and transform the code accordingly while preserving its core logic unless otherwise specified. Use best practices, idiomatic constructs, and concise formatting. Ensure the output is clean, coherent, and tailored to the user's specified use case or transformation."
+        )
+
+        additions.add("Always return only the improved code. Do NOT wrap it in markdown, triple backticks, or language annotations.")
 
         return (additions + base).joinToString(". ") + "."
     }
-
-    fun shouldCopyToClipboard(): Boolean = copyToClipboardCheckbox.isSelected
 }
