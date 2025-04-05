@@ -20,6 +20,11 @@ intellij {
     plugins.set(listOf(/* Plugin Dependencies */))
 }
 
+dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.11.0") // for OpenAI calls
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+}
+
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
