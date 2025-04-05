@@ -5,7 +5,10 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
+import org.stealingdapenta.github.GitHubSettingsService
 import org.stealingdapenta.ui.GitHubRepoDialog
+import org.stealingdapenta.ui.GitHubTokenDialog
 
 @Service
 @State(name = "GitHubSettings", storages = [Storage("chatgpt-pilot.xml")])
@@ -43,6 +46,23 @@ class GitHubSettingsService : PersistentStateComponent<GitHubSettingsService.Sta
         return true
     }
 
+    fun promptForTokenAndRepo(project: Project): Boolean {
+        val dialog = GitHubTokenDialog()
+        if (!dialog.showAndGet()) return false
+
+        val token = dialog.getToken()
+        val repo = dialog.getRepo()
+
+        if (token.isBlank() || repo.isBlank()) {
+            Messages.showErrorDialog(project, "Both GitHub token and repository are required.", "ChatGPTPilot")
+            return false
+        }
+
+        setToken(token)
+        setRepo(repo)
+        return true
+    }
+
 
     companion object {
         private fun getInstance(): GitHubSettingsService =
@@ -54,6 +74,9 @@ class GitHubSettingsService : PersistentStateComponent<GitHubSettingsService.Sta
         fun setRepo(repo: String) = getInstance().setRepo(repo)
         fun ensureRepoConfigured(project: Project): Boolean {
             return getInstance().ensureRepoConfigured(project)
+        }
+        fun promptForTokenAndRepo(project: Project): Boolean {
+            return getInstance().promptForTokenAndRepo(project)
         }
     }
 }

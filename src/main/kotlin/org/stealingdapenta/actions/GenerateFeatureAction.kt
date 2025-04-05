@@ -13,7 +13,6 @@ import org.stealingdapenta.git.ProjectFileWriter
 import org.stealingdapenta.github.GitHubService
 import org.stealingdapenta.github.GitHubSettingsService
 import org.stealingdapenta.ui.FeaturePromptDialog
-import org.stealingdapenta.ui.GitHubTokenDialog
 
 class GenerateFeatureAction : AnAction() {
 
@@ -30,15 +29,11 @@ class GenerateFeatureAction : AnAction() {
 
         if (token.isNullOrBlank() || repo.isNullOrBlank() || !GitHubService.isRepoValid(repo, token)) {
             ApplicationManager.getApplication().invokeLater {
-                Messages.showErrorDialog(
-                    project,
-                    "Your GitHub token or repo is missing or invalid. Please configure it first.",
-                    "ChatGPTPilot"
-                )
-                GitHubTokenDialog().show()
+                if (!GitHubSettingsService.promptForTokenAndRepo(project)) return@invokeLater
             }
             return
         }
+
 
         if (!GitHubSettingsService.ensureRepoConfigured(project)) return
 
