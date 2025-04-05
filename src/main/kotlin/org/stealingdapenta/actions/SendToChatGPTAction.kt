@@ -1,38 +1,51 @@
 package org.stealingdapenta.actions
 
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.ui.Messages
 import org.stealingdapenta.api.ChatGPTClient
+import org.stealingdapenta.ui.ChatGptPromptDialog
+import java.awt.datatransfer.StringSelection
 
-class SendToChatGPTAction : AnAction() {
-    override fun update(e: AnActionEvent) {
-        e.presentation.text = "Send to ChatGPT"
-        e.presentation.description = "Send selected code to ChatGPT for suggestions"
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.EDT
-    }
-
+class SendToChatGPTAction : AnAction("Send to ChatGPT") {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val project = e.project ?: return
         val document = editor.document
-        val selection = editor.selectionModel.selectedText ?: return
+        val selectionModel = editor.selectionModel
 
-        val prompt = "Improve this UI code with modern best practices:\n\n$selection"
-        val result = ChatGPTClient.sendPrompt(prompt)
-
-        WriteCommandAction.runWriteCommandAction(project) {
-            document.replaceString(
-                editor.selectionModel.selectionStart, editor.selectionModel.selectionEnd, result
-            )
+        val selectedText = selectionModel.selectedText ?: run {
+            Messages.showInfoMessage(project, "No code selected!", "Send to ChatGPT")
+            return
         }
 
-        Messages.showMessageDialog(project, "Refactor applied!", "ChatGPT", Messages.getInformationIcon())
+        val dialog = ChatGptPromptDialog(ChatGPTClient.getModelUsed())
+        if (!dialog.showAndGet()) return
+
+        val fullPrompt = dialog.getFinalPrompt() + "\n\n```kotlin\n$selectedText\n```"
+
+        val result = ChatGPTClient.sendPrompt(fullPrompt)
+
+        ApplicationManager.getApplication().invokeLater {
+            val userChoice = Messages.showDialog(
+                project, result, "ChatGPT Response", arrayOf("Copy to Clipboard", "Apply", "Cancel"), 0, Messages.getInformationIcon()
+            )
+
+            when (userChoice) {
+                0 -> CopyPasteManager.getInstance().setContents(StringSelection(result))
+                1 -> WriteCommandAction.runWriteCommandAction(project) {
+                    document.replaceString(
+                        selectionModel.selectionStart, selectionModel.selectionEnd, result
+                    )
+                }
+                // 2 = Cancel
+            }
+        }
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread {
+        return ActionUpdateThread.EDT
     }
 }
