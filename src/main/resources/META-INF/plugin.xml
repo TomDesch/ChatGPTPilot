@@ -1,30 +1,23 @@
-<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-  <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-  <id>org.stealingdapenta.ChatGPTPilot</id>
+  <id>org.stealingdapenta.chatgptplugin</id>
+  <name>ChatGPT Assistant</name>
+  <vendor email="tomdescheemaeker@hotmail.com" url="https://yourdomain.com">Tom Descheemaeker</vendor>
 
-  <!-- Public plugin name should be written in Title Case.
-       Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-  <name>ChatGPTPilot</name>
-
-  <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-  <vendor email="support@yourcompany.com" url="https://www.yourcompany.com">YourCompany</vendor>
-
-  <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-       Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
-       Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
   <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
-  ]]></description>
+        Right-click code and refactor it using GPT-4.<br/>
+        Great for Vue, Spring Boot, REST, UI tweaks, etc.
+    ]]></description>
 
-  <!-- Product and plugin compatibility requirements.
-       Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
   <depends>com.intellij.modules.platform</depends>
 
-  <!-- Extension points defined by the plugin.
-       Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
   <extensions defaultExtensionNs="com.intellij">
-
+    <!-- You can register application/project listeners here if needed -->
   </extensions>
+
+  <actions>
+    <action id="ChatGPT.SendToGPT" class="org.stealingdapenta.actions.SendToChatGPTAction"
+      text="Send to ChatGPT" description="Send selected code to ChatGPT for suggestions">
+      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+    </action>
+  </actions>
 </idea-plugin>
