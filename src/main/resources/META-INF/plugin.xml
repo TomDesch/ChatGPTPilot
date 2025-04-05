@@ -4,9 +4,25 @@
   <vendor email="tomdescheemaeker@hotmail.com" url="https://yourdomain.com">Tom Descheemaeker</vendor>
 
   <description><![CDATA[
-        Right-click code and refactor it using GPT-4.<br/>
-        Great for Vue, Spring Boot, REST, UI tweaks, etc.
-    ]]></description>
+    <b>ChatGPT Assistant for IntelliJ</b><br/><br/>
+
+    Right-click selected code and choose <i>"Send to ChatGPT"</i> to get smart suggestions powered by OpenAI.<br/>
+    Supports refactoring, optimizing, cleaning, and reworking code — especially useful for <b>Vue, Spring Boot, REST APIs, and UI polish</b>.<br/><br/>
+
+    <b>💡 Setup Instructions</b><br/>
+    To use this plugin, you must provide an OpenAI API key via environment variable:<br/>
+    <code>setx OPENAI_API_KEY "sk-xxxxxxxxxxxxxxxx"</code><br/>
+    After running this command, <b>restart IntelliJ</b> to apply the environment variable.<br/><br/>
+
+    <b>✅ Features</b><br/>
+    • ChatGPT-4 and GPT-3.5 auto-detection<br/>
+    • Prompt customization with checkboxes (Refactor, Optimize, Rework)<br/>
+    • Clipboard + auto-replace options<br/>
+    • Reiterate with a new prompt<br/><br/>
+
+    Built with ❤️ by Tom Descheemaeker <i>(lol who am I kidding this is 'vibe coded')</i>.
+]]></description>
+
 
   <depends>com.intellij.modules.platform</depends>
 
