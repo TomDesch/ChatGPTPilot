@@ -49,6 +49,7 @@ class GenerateFeatureAction : AnAction() {
         val branchName = generateBranchName(taskType)
 
         GitHubService.createBranch(newBranch = branchName, onSuccess = {
+            GitIntegration.runGitCommand(project, "fetch", "origin", "$branchName:$branchName") // fetch the newly created branch
             val checkoutResult = GitIntegration.runGitCommand(project, "checkout", branchName)
             if (!checkoutResult.contains("Switched to")) {
                 showError(project, "❌ Could not switch to new branch:\n$checkoutResult")
