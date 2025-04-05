@@ -1,6 +1,9 @@
 package org.stealingdapenta.actions
 
-import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.ide.CopyPasteManager
@@ -9,7 +12,12 @@ import org.stealingdapenta.api.ChatGPTClient
 import org.stealingdapenta.ui.ChatGptPromptDialog
 import java.awt.datatransfer.StringSelection
 
-class SendToChatGPTAction : AnAction("Send to ChatGPT") {
+class SendToChatGPTAction : AnAction() {
+    init {
+        templatePresentation.text = "Send to ChatGPT"
+        templatePresentation.description = "Send selected code to ChatGPT for transformation"
+    }
+
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val project = e.project ?: return
